@@ -54,11 +54,11 @@ Then load it in Chrome:
 Auto-detects installed agents and installs to the right place:
 
 ```bash
-pipx run --spec cdp-sdk cdp-browse                      # auto-detect all agents
-pipx run --spec cdp-sdk cdp-browse --agent claude       # Claude Code only
-pipx run --spec cdp-sdk cdp-browse --agent codex        # Codex (CLI + App)
-pipx run --spec cdp-sdk cdp-browse --agent all          # all agents
-pipx run --spec cdp-sdk cdp-browse --uninstall          # remove
+pipx run --spec cdp-browse cdp-browse                      # auto-detect all agents
+pipx run --spec cdp-browse cdp-browse --agent claude       # Claude Code only
+pipx run --spec cdp-browse cdp-browse --agent codex        # Codex (CLI + App)
+pipx run --spec cdp-browse cdp-browse --agent all          # all agents
+pipx run --spec cdp-browse cdp-browse --uninstall          # remove
 ```
 
 **Option B: git clone**
@@ -84,7 +84,7 @@ git clone https://github.com/dave-wind/cdp-browse.git .agents/skills/cdp-browse
 #### Step 3: Install the Python SDK
 
 ```bash
-pip install cdp-sdk
+pip install cdp-browse
 ```
 
 #### Step 4: Configure MCP
@@ -188,7 +188,7 @@ cdp-browse/
 ├── SKILL.md                # Skill instructions (agent reads this)
 ├── agents/
 │   └── openai.yaml         # Codex App UI metadata
-├── cdp_sdk/                # Python SDK (pip install cdp-sdk)
+├── cdp_sdk/                # Python SDK (pip install cdp-browse)
 │   ├── __init__.py
 │   ├── client.py           # CDPClient — HTTP layer
 │   └── page.py             # Page — high-level operations
@@ -205,7 +205,7 @@ cdp-browse/
 | `CDP-Bridge 连接失败` | Check `lsof -i :18765`, confirm service is running |
 | Extension icon not green | Check proxy bypasses `localhost`/`127.0.0.1` |
 | Page content incomplete | Increase wait time or use `wait_for_selector` |
-| `ModuleNotFoundError: No module named 'cdp_sdk'` | Run `pip install cdp-sdk` |
+| `ModuleNotFoundError: No module named 'cdp_sdk'` | Run `pip install cdp-browse` |
 
 ### Related Projects
 
@@ -261,11 +261,11 @@ git clone https://github.com/Unagi-cq/cdp-bridge-mcp.git /tmp/cdp-bridge-mcp
 自动检测已安装的 agent 并安装到对应目录：
 
 ```bash
-pipx run --spec cdp-sdk cdp-browse                      # 自动检测所有 agent
-pipx run --spec cdp-sdk cdp-browse --agent claude       # 仅 Claude Code
-pipx run --spec cdp-sdk cdp-browse --agent codex        # 仅 Codex（CLI + App）
-pipx run --spec cdp-sdk cdp-browse --agent all          # 所有 agent
-pipx run --spec cdp-sdk cdp-browse --uninstall          # 卸载
+pipx run --spec cdp-browse cdp-browse                      # 自动检测所有 agent
+pipx run --spec cdp-browse cdp-browse --agent claude       # 仅 Claude Code
+pipx run --spec cdp-browse cdp-browse --agent codex        # 仅 Codex（CLI + App）
+pipx run --spec cdp-browse cdp-browse --agent all          # 所有 agent
+pipx run --spec cdp-browse cdp-browse --uninstall          # 卸载
 ```
 
 **方式 B：git clone**
@@ -291,7 +291,7 @@ git clone https://github.com/dave-wind/cdp-browse.git .agents/skills/cdp-browse
 #### 第 3 步：安装 Python SDK
 
 ```bash
-pip install cdp-sdk
+pip install cdp-browse
 ```
 
 #### 第 4 步：配置 MCP
@@ -380,7 +380,7 @@ MCP 服务运行时，agent 可以直接调用以下工具：
 | `CDP-Bridge 连接失败` | 检查 `lsof -i :18765`，确认服务在运行 |
 | 扩展图标不是绿色 | 检查代理绕过 `localhost`/`127.0.0.1` |
 | 页面内容不完整 | 增加等待时间或使用 `wait_for_selector` |
-| `ModuleNotFoundError: No module named 'cdp_sdk'` | 运行 `pip install cdp-sdk` |
+| `ModuleNotFoundError: No module named 'cdp_sdk'` | 运行 `pip install cdp-browse` |
 
 ### 相关项目
 

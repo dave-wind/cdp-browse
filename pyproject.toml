@@ -3,7 +3,7 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cdp-sdk"
+name = "cdp-browse"
 version = "0.2.0"
 description = "Chrome browser control SDK via CDP-Bridge"
 requires-python = ">=3.10"
