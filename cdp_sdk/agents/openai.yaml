@@ -1,0 +1,8 @@
+interface:
+  display_name: "CDP Browse"
+  short_description: "Browse and interact with web pages via local Chrome"
+  brand_color: "#4285F4"
+  default_prompt: "open this URL in my browser"
+
+policy:
+  allow_implicit_invocation: true

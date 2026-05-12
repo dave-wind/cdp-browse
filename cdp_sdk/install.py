@@ -11,18 +11,17 @@ Usage:
 """
 
 import argparse
-import os
 import shutil
 import subprocess
 import sys
+from importlib.resources import files as pkg_files
 from pathlib import Path
 
 SKILL_NAME = "cdp-browse"
-SKILL_SOURCE = Path(__file__).parent.resolve()
+PKG_DIR = Path(str(pkg_files("cdp_sdk")))  # actual installed package directory
 
 EXCLUDE_FILES = {
-    "install.py", "pyproject.toml", ".gitignore", "README.md",
-    "__pycache__", "cdp_sdk.egg-info", "build", "dist",
+    "install.py", "__pycache__",
 }
 
 AGENT_CONFIG = {
@@ -93,7 +92,7 @@ def install_to(agent_key: str) -> bool:
     for dir_path in cfg["dirs"]:
         dest = dir_path / SKILL_NAME
         try:
-            copy_recursive(SKILL_SOURCE, dest)
+            copy_recursive(PKG_DIR, dest)
             print(f"  ✓ {cfg['label']} → {dest}")
             installed = True
         except Exception as e:
@@ -148,6 +147,9 @@ def main():
 
     print(f"\nInstalling cdp-browse skill...\n")
     success = sum(1 for key in targets if install_to(key))
+
+    print("\n  Note: The skill uses 'uvx --from cdp-browse python' to run code,")
+    print("  so no separate pip install is needed.\n")
 
     if success == 0:
         print("\nNo agents installed. Install Codex, Claude Code, or OpenCode first.\n")
