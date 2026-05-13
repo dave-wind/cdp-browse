@@ -60,9 +60,47 @@ brew install uv
 | **bash**（Linux） | `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc` |
 | **Windows** | 无需操作 — 安装程序会自动加入 PATH |
 
+> **国内用户加速提示：** 使用阿里云镜像加速 uvx 下载，在任何 `uvx` 命令前加镜像前缀：
+> ```bash
+> UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ uvx cdp-bridge@latest
+> ```
+> 或永久设置：
+> ```bash
+> export UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+> ```
+
 ## 安装
 
-### 第 1 步：安装 Skill
+### 第 1 步：加载 Chrome 扩展
+
+CDP-Bridge 扩展负责连接浏览器和 MCP 服务。**必须先安装扩展**，再执行后续 uvx 命令。
+
+**一键下载：**
+```bash
+git clone https://gitee.com/dave-wind/cdp-browse-extenssion.git cdp_browse_extension
+```
+
+下载到当前目录的 `./cdp_browse_extension/`。也可指定目录：
+```bash
+git clone https://gitee.com/dave-wind/cdp-browse-extenssion.git /path/to/dest
+```
+
+> **备选方式（GitHub 托管脚本）：**
+> ```bash
+> curl -sSL https://raw.githubusercontent.com/dave-wind/cdp-browse/master/download-extension.sh | bash
+> ```
+
+在 Chrome 中加载：
+
+1. 打开 `chrome://extensions/`
+2. 开启右上角 **开发者模式**
+3. 点击 **加载已解压的扩展程序**
+4. 选择下载好的扩展文件夹
+5. 扩展图标应显示 **绿色 "Connected"**
+
+> 扩展默认连接 `127.0.0.1:18765`。请确保系统代理绕过 `localhost` 和 `127.0.0.1`。
+
+### 第 2 步：安装 Skill
 
 **方式 A：uvx 一键安装（推荐）**
 
@@ -78,6 +116,11 @@ uvx --from cdp-browse cdp-browse --agent all          # 所有 agent
 # 卸载
 uvx --from cdp-browse cdp-browse --uninstall
 ```
+
+> **国内用户加速：** 加镜像前缀加速下载：
+> ```bash
+> UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ uvx --from cdp-browse cdp-browse
+> ```
 
 > 如果 `uvx` 不可用，使用 `uv tool run --from cdp-browse cdp-browse`。
 
@@ -107,14 +150,6 @@ mkdir -p .agents/skills
 git clone https://github.com/dave-wind/cdp-browse.git .agents/skills/cdp-browse
 ```
 
-### 第 2 步：Python SDK（自动管理）
-
-无需单独安装。Skill 使用 `uvx --from cdp-browse python` 运行代码，SDK 自动可用。如果要在自己的脚本中使用 SDK：
-
-```bash
-pip install cdp-browse
-```
-
 ### 第 3 步：配置 MCP
 
 MCP 服务让 agent 可以直接使用浏览器工具。
@@ -123,11 +158,15 @@ MCP 服务让 agent 可以直接使用浏览器工具。
 ```bash
 claude mcp add cdp-bridge -- uvx cdp-bridge@latest
 ```
-> 如果 `uvx` 不可用：`claude mcp add cdp-bridge -- uv tool run cdp-bridge@latest`
 
 **Codex：**
 ```bash
 codex mcp add cdp-bridge -- uvx cdp-bridge@latest
+```
+
+**国内用户加速：** 使用镜像加速 MCP 服务启动：
+```bash
+claude mcp add cdp-bridge -- sh -c 'UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ uvx cdp-bridge@latest'
 ```
 
 **手动配置**（任何 MCP 客户端，如 Claude Desktop、Cursor）：
@@ -143,29 +182,13 @@ codex mcp add cdp-bridge -- uvx cdp-bridge@latest
 ```
 > 如需替换，将 `uvx` 改为 `uv tool run`。
 
-### 第 4 步：加载 Chrome 扩展
+### 第 4 步：Python SDK（自动管理）
 
-CDP-Bridge 扩展负责连接浏览器和 MCP 服务。一条命令下载：
-
-```bash
-curl -sSL https://raw.githubusercontent.com/dave-wind/cdp-browse/master/download-extension.sh | bash
-```
-
-默认下载到当前目录。也可指定目录：
+无需单独安装。Skill 使用 `uvx --from cdp-browse python` 运行代码，SDK 自动可用。如果要在自己的脚本中使用 SDK：
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/dave-wind/cdp-browse/master/download-extension.sh | bash -s /path/to/dest
+pip install cdp-browse
 ```
-
-在 Chrome 中加载：
-
-1. 打开 `chrome://extensions/`
-2. 开启右上角 **开发者模式**
-3. 点击 **加载已解压的扩展程序**
-4. 选择下载好的扩展文件夹
-5. 扩展图标应显示 **绿色 "Connected"**
-
-> 扩展默认连接 `127.0.0.1:18765`。请确保系统代理绕过 `localhost` 和 `127.0.0.1`。
 
 ## 使用
 
@@ -247,6 +270,7 @@ Skill（cdp_sdk）和 MCP（browser_* 工具）控制的是同一个浏览器，
 | 页面内容不完整 | 增加等待时间或使用 `wait_for_selector` |
 | `ModuleNotFoundError: No module named 'cdp_sdk'` | 运行 `pip install cdp-browse` |
 | `uvx: command not found` | 安装 uv：见[安装 uv](#安装-uv) 章节 |
+| `uvx` 国内下载慢 | 使用镜像：`UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ uvx ...` |
 
 ## 相关项目
 
