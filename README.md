@@ -8,15 +8,14 @@ English | [中文](README_CN.md)
 
 ## What It Does
 
-CDP Browse gives your AI agent (Claude Code, Codex, OpenCode) the ability to browse the web through **your real Chrome browser** — with cookies, login sessions, and JavaScript rendering intact.
+CDP Browse gives your AI agent (Claude Code, Codex, OpenCode, GitHub Copilot) the ability to browse the web through **your real Chrome browser** — with cookies, login sessions, and JavaScript rendering intact.
 
-Three usage modes in one package:
+Two usage modes — pick one or both:
 
-| Mode | When to Use |
-|------|-------------|
-| **Skill** | Agent auto-uses it when you say "open this URL", "check this page", etc. |
-| **MCP** | Direct tool calls via CDP-Bridge MCP server (scan, execute JS, screenshot) |
-| **SDK** | Write Python scripts with `from cdp_sdk import CDPClient, Page` |
+| Mode | How It Works | Best For |
+|------|-------------|----------|
+| **MCP** | Agent calls `browser_scan`, `browser_execute_js`, etc. directly via CDP-Bridge MCP server | Quick lookups, screenshots, cookies, single-page tasks |
+| **SDK (Skill)** | Agent runs Python scripts with `from cdp_sdk import CDPClient, Page` | Complex scraping, multi-step flows (login → click → submit), data extraction |
 
 ## Prerequisites
 
@@ -100,11 +99,71 @@ Then load it in Chrome:
 
 > The extension connects to `127.0.0.1:18765` by default. Make sure your system proxy bypasses `localhost` and `127.0.0.1`.
 
-### Step 2: Install the Skill
+### Step 2: Choose Your Mode
 
-**Option A: uvx one-click (recommended)**
+#### Mode A: MCP (recommended for most users)
 
-Auto-detects installed agents and installs to the right place:
+Configure the MCP server in your agent client. The agent will auto-start the server when needed — **no need to manually run `uvx cdp-bridge` in a separate terminal.**
+
+**Claude Code:**
+```bash
+claude mcp add cdp-bridge -- uvx cdp-bridge@latest
+```
+
+**Codex:**
+```bash
+codex mcp add cdp-bridge -- uvx cdp-bridge@latest
+```
+
+**GitHub Copilot (VS Code)** — create `.vscode/mcp.json` in your project:
+```json
+{
+  "servers": {
+    "cdp-bridge": {
+      "command": "uvx",
+      "args": ["cdp-bridge@latest"]
+    }
+  }
+}
+```
+
+**OpenCode** — edit `~/.config/opencode/opencode.json`:
+```json
+{
+  "mcp": {
+    "cdp-bridge": {
+      "type": "local",
+      "command": ["uvx", "cdp-bridge@latest"],
+      "enabled": true
+    }
+  }
+}
+```
+
+**Other clients** (Claude Desktop, Cursor, Windsurf, etc.) — add to MCP config:
+```json
+{
+  "mcpServers": {
+    "cdp-bridge": {
+      "command": "uvx",
+      "args": ["cdp-bridge@latest"]
+    }
+  }
+}
+```
+
+> **Chinese users (国内用户):** Use mirror for faster MCP server startup:
+> ```bash
+> claude mcp add cdp-bridge -- sh -c 'UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ uvx cdp-bridge@latest'
+> ```
+
+> Replace `uvx` with `uv tool run` if needed.
+
+#### Mode B: SDK / Skill
+
+Install the skill so your agent can run Python browser automation scripts.
+
+**uvx one-click (recommended):**
 
 ```bash
 # Install
@@ -130,7 +189,7 @@ uvx --from cdp-browse cdp-browse --uninstall
 rm -rf ~/.codex/skills/cdp-browse ~/.agents/skills/cdp-browse && uv cache clean --force && uvx --from cdp-browse cdp-browse --agent codex
 ```
 
-**Option B: git clone (manual)**
+**git clone (manual):**
 
 ```bash
 # Claude Code
@@ -141,51 +200,12 @@ mkdir -p ~/.agents/skills && git clone https://github.com/dave-wind/cdp-browse.g
 
 # Codex CLI (legacy path)
 mkdir -p ~/.codex/skills && git clone https://github.com/dave-wind/cdp-browse.git ~/.codex/skills/cdp-browse
+
+# Project-level (team sharing)
+mkdir -p .agents/skills && git clone https://github.com/dave-wind/cdp-browse.git .agents/skills/cdp-browse
 ```
 
-**Option C: Project-level (team sharing)**
-
-```bash
-mkdir -p .agents/skills
-git clone https://github.com/dave-wind/cdp-browse.git .agents/skills/cdp-browse
-```
-
-### Step 3: Configure MCP
-
-The MCP server lets your agent use browser tools directly. Choose your client:
-
-**Claude Code:**
-```bash
-claude mcp add cdp-bridge -- uvx cdp-bridge@latest
-```
-
-**Codex:**
-```bash
-codex mcp add cdp-bridge -- uvx cdp-bridge@latest
-```
-
-**Chinese users (国内用户):** Use mirror for faster MCP server startup:
-```bash
-claude mcp add cdp-bridge -- sh -c 'UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ uvx cdp-bridge@latest'
-```
-
-**Manual config** (any MCP client, e.g. Claude Desktop, Cursor):
-```json
-{
-  "mcpServers": {
-    "cdp-bridge": {
-      "command": "uvx",
-      "args": ["cdp-bridge@latest"]
-    }
-  }
-}
-```
-
-> Replace `uvx` with `uv tool run` if needed.
-
-### Step 4: Python SDK (auto-managed)
-
-No separate install needed. The skill uses `uvx --from cdp-browse python` to run code, which automatically provides the SDK. If you want to use the SDK in your own scripts:
+**Python SDK** — No separate install needed. The skill uses `uvx --from cdp-browse python` to run code, which automatically provides the SDK. If you want to use the SDK in your own scripts:
 
 ```bash
 pip install cdp-browse
@@ -193,8 +213,23 @@ pip install cdp-browse
 
 ## Usage
 
-### Via Skill (just talk to your agent)
+### Via MCP tools (Mode A)
 
+When the MCP server is configured, your agent can call these tools directly — the server starts automatically on first use:
+
+| Tool | Description |
+|------|-------------|
+| `browser_scan` | Scan page content (simplified HTML or plain text) |
+| `browser_execute_js` | Execute JavaScript in the page |
+| `browser_navigate` | Navigate to a URL |
+| `browser_screenshot` | Take a screenshot |
+| `browser_get_tabs` | List open tabs |
+| `browser_switch_tab` | Switch active tab |
+| `browser_cookies` | Read cookies |
+
+### Via Skill / SDK (Mode B)
+
+Just talk to your agent:
 ```
 Open https://example.com and tell me what's on the page
 ```
@@ -207,8 +242,7 @@ Open https://example.com and tell me what's on the page
 Scrape all the commit messages from this GitLab page
 ```
 
-### Via SDK (Python scripts)
-
+Or write Python scripts:
 ```python
 from cdp_sdk import CDPClient, Page
 
@@ -231,39 +265,19 @@ page.scroll_to_bottom()
 
 **Full API reference is in the [SKILL.md](SKILL.md).**
 
-### Via MCP tools
-
-When the MCP server is running, your agent can call these tools directly:
-
-| Tool | Description |
-|------|-------------|
-| `browser_scan` | Scan page content (simplified HTML or plain text) |
-| `browser_execute_js` | Execute JavaScript in the page |
-| `browser_navigate` | Navigate to a URL |
-| `browser_screenshot` | Take a screenshot |
-| `browser_get_tabs` | List open tabs |
-| `browser_switch_tab` | Switch active tab |
-| `browser_cookies` | Read cookies |
-
-## Skill vs MCP — Which to Use?
-
-Both Skill (cdp_sdk) and MCP (browser_* tools) control the same browser. Choose based on the task:
+### MCP vs SDK — Which to Use?
 
 | Scenario | Use | Why |
 |----------|-----|-----|
 | "Check this page" | **MCP** | `browser_scan` filters noise, returns clean content, zero startup |
-| "Scrape this list" | **Skill** | `query_all` extracts only what you need, saves tokens |
-| "Scroll and load more" | **Skill** | Loop in one script, no multi-round conversation |
+| "Scrape this list" | **SDK** | `query_all` extracts only what you need, saves tokens |
+| "Scroll and load more" | **SDK** | Loop in one script, no multi-round conversation |
 | "Take a screenshot" | **MCP** | Only MCP has `browser_screenshot` |
 | "Read cookies" | **MCP** | Only MCP has `browser_cookies` |
-| "Multi-step flow (login → click → submit)" | **Skill** | One script completes the flow, no back-and-forth |
+| "Multi-step flow (login → click → submit)" | **SDK** | One script completes the flow, no back-and-forth |
 | "List open tabs" | **MCP** | `browser_get_tabs` / `browser_switch_tab` |
 
-**Speed**: Simple operations are faster via MCP (no uvx startup). Complex multi-step operations are faster via Skill (one script vs multiple MCP rounds).
-
-**Token efficiency**: `browser_scan` auto-filters scripts/styles/hidden elements (~1/3 to 1/5 of raw text). `query_all()` in Skill extracts only targeted data. Both beat `extract_text('body')` which returns everything raw.
-
-**Best practice**: Install both. Use MCP for quick lookups, Skill for complex scraping.
+**Best practice**: Install both. Use MCP for quick lookups, SDK for complex scraping.
 
 ## Compatible Agents
 

@@ -8,15 +8,14 @@
 
 ## 它是什么
 
-CDP Browse 让你的 AI 编码助手（Claude Code、Codex、OpenCode）能够控制你的 **真实 Chrome 浏览器**——Cookie、登录态、JS 渲染全部复用，不需要重新登录。
+CDP Browse 让你的 AI 编码助手（Claude Code、Codex、OpenCode、GitHub Copilot）能够控制你的 **真实 Chrome 浏览器**——Cookie、登录态、JS 渲染全部复用，不需要重新登录。
 
-一个包，三种用法：
+两种模式 — 选一个或都装：
 
-| 模式 | 适用场景 |
-|------|---------|
-| **Skill** | 对 agent 说"帮我看看这个网页"自动触发 |
-| **MCP** | 通过 CDP-Bridge MCP 服务直接调用浏览器工具 |
-| **SDK** | 用 Python 写脚本 `from cdp_sdk import CDPClient, Page` |
+| 模式 | 工作方式 | 适用场景 |
+|------|---------|---------|
+| **MCP** | Agent 通过 CDP-Bridge MCP 服务直接调用 `browser_scan`、`browser_execute_js` 等工具 | 快速查看页面、截图、读取 Cookie、单页任务 |
+| **SDK（Skill）** | Agent 运行 Python 脚本 `from cdp_sdk import CDPClient, Page` | 复杂爬取、多步操作（登录→点击→提交）、数据提取 |
 
 ## 前置条件
 
@@ -73,7 +72,7 @@ brew install uv
 
 ### 第 1 步：加载 Chrome 扩展
 
-CDP-Bridge 扩展负责连接浏览器和 MCP 服务。**必须先安装扩展**，再执行后续 uvx 命令。
+CDP-Bridge 扩展负责连接浏览器和 MCP 服务。**必须先安装扩展**，再执行后续操作。
 
 **一键下载：**
 ```bash
@@ -100,11 +99,71 @@ git clone https://gitee.com/dave-wind/cdp-browse-extenssion.git /path/to/dest
 
 > 扩展默认连接 `127.0.0.1:18765`。请确保系统代理绕过 `localhost` 和 `127.0.0.1`。
 
-### 第 2 步：安装 Skill
+### 第 2 步：选择你的模式
 
-**方式 A：uvx 一键安装（推荐）**
+#### 模式 A：MCP（推荐大多数用户使用）
 
-自动检测已安装的 agent 并安装到对应目录：
+在 Agent 客户端中配置 MCP 服务即可。Agent 会在需要时自动启动服务 — **无需手动在新窗口中运行 `uvx cdp-bridge`。**
+
+**Claude Code：**
+```bash
+claude mcp add cdp-bridge -- uvx cdp-bridge@latest
+```
+
+**Codex：**
+```bash
+codex mcp add cdp-bridge -- uvx cdp-bridge@latest
+```
+
+**GitHub Copilot（VS Code）** — 在项目中创建 `.vscode/mcp.json`：
+```json
+{
+  "servers": {
+    "cdp-bridge": {
+      "command": "uvx",
+      "args": ["cdp-bridge@latest"]
+    }
+  }
+}
+```
+
+**OpenCode** — 编辑 `~/.config/opencode/opencode.json`：
+```json
+{
+  "mcp": {
+    "cdp-bridge": {
+      "type": "local",
+      "command": ["uvx", "cdp-bridge@latest"],
+      "enabled": true
+    }
+  }
+}
+```
+
+**其他客户端**（Claude Desktop、Cursor、Windsurf 等）— 添加 MCP 配置：
+```json
+{
+  "mcpServers": {
+    "cdp-bridge": {
+      "command": "uvx",
+      "args": ["cdp-bridge@latest"]
+    }
+  }
+}
+```
+
+> **国内用户加速：** 使用镜像加速 MCP 服务启动：
+> ```bash
+> claude mcp add cdp-bridge -- sh -c 'UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ uvx cdp-bridge@latest'
+> ```
+
+> 如需替换，将 `uvx` 改为 `uv tool run`。
+
+#### 模式 B：SDK / Skill
+
+安装 Skill，让 Agent 可以运行 Python 浏览器自动化脚本。
+
+**uvx 一键安装（推荐）：**
 
 ```bash
 # 安装
@@ -130,7 +189,7 @@ uvx --from cdp-browse cdp-browse --uninstall
 rm -rf ~/.codex/skills/cdp-browse ~/.agents/skills/cdp-browse && uv cache clean --force && uvx --from cdp-browse cdp-browse --agent codex
 ```
 
-**方式 B：git clone（手动）**
+**git clone（手动）：**
 
 ```bash
 # Claude Code
@@ -141,50 +200,12 @@ mkdir -p ~/.agents/skills && git clone https://github.com/dave-wind/cdp-browse.g
 
 # Codex CLI（旧路径）
 mkdir -p ~/.codex/skills && git clone https://github.com/dave-wind/cdp-browse.git ~/.codex/skills/cdp-browse
+
+# 项目级（团队共享）
+mkdir -p .agents/skills && git clone https://github.com/dave-wind/cdp-browse.git .agents/skills/cdp-browse
 ```
 
-**方式 C：项目级安装（团队共享）**
-
-```bash
-mkdir -p .agents/skills
-git clone https://github.com/dave-wind/cdp-browse.git .agents/skills/cdp-browse
-```
-
-### 第 3 步：配置 MCP
-
-MCP 服务让 agent 可以直接使用浏览器工具。
-
-**Claude Code：**
-```bash
-claude mcp add cdp-bridge -- uvx cdp-bridge@latest
-```
-
-**Codex：**
-```bash
-codex mcp add cdp-bridge -- uvx cdp-bridge@latest
-```
-
-**国内用户加速：** 使用镜像加速 MCP 服务启动：
-```bash
-claude mcp add cdp-bridge -- sh -c 'UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ uvx cdp-bridge@latest'
-```
-
-**手动配置**（任何 MCP 客户端，如 Claude Desktop、Cursor）：
-```json
-{
-  "mcpServers": {
-    "cdp-bridge": {
-      "command": "uvx",
-      "args": ["cdp-bridge@latest"]
-    }
-  }
-}
-```
-> 如需替换，将 `uvx` 改为 `uv tool run`。
-
-### 第 4 步：Python SDK（自动管理）
-
-无需单独安装。Skill 使用 `uvx --from cdp-browse python` 运行代码，SDK 自动可用。如果要在自己的脚本中使用 SDK：
+**Python SDK** — 无需单独安装。Skill 使用 `uvx --from cdp-browse python` 运行代码，SDK 自动可用。如果要在自己的脚本中使用 SDK：
 
 ```bash
 pip install cdp-browse
@@ -192,8 +213,23 @@ pip install cdp-browse
 
 ## 使用
 
-### 通过 Skill（直接跟 agent 说）
+### 通过 MCP 工具（模式 A）
 
+MCP 服务配置好后，Agent 可以直接调用以下工具 — 服务在首次使用时自动启动：
+
+| 工具 | 说明 |
+|------|------|
+| `browser_scan` | 扫描页面内容（简化 HTML 或纯文本） |
+| `browser_execute_js` | 在页面中执行 JavaScript |
+| `browser_navigate` | 导航到指定 URL |
+| `browser_screenshot` | 页面截图 |
+| `browser_get_tabs` | 获取打开的标签页列表 |
+| `browser_switch_tab` | 切换活动标签页 |
+| `browser_cookies` | 读取 Cookie |
+
+### 通过 Skill / SDK（模式 B）
+
+直接跟 Agent 说：
 ```
 帮我打开 https://example.com 看看页面上有什么
 ```
@@ -202,8 +238,7 @@ pip install cdp-browse
 抓取这个 GitLab 页面上所有的 commit 信息
 ```
 
-### 通过 SDK（Python 脚本）
-
+或写 Python 脚本：
 ```python
 from cdp_sdk import CDPClient, Page
 
@@ -226,39 +261,19 @@ page.scroll_to_bottom()
 
 **完整 API 参考见 [SKILL.md](SKILL.md)。**
 
-### 通过 MCP 工具
-
-MCP 服务运行时，agent 可以直接调用以下工具：
-
-| 工具 | 说明 |
-|------|------|
-| `browser_scan` | 扫描页面内容（简化 HTML 或纯文本） |
-| `browser_execute_js` | 在页面中执行 JavaScript |
-| `browser_navigate` | 导航到指定 URL |
-| `browser_screenshot` | 页面截图 |
-| `browser_get_tabs` | 获取打开的标签页列表 |
-| `browser_switch_tab` | 切换活动标签页 |
-| `browser_cookies` | 读取 Cookie |
-
-## Skill vs MCP — 该用哪个？
-
-Skill（cdp_sdk）和 MCP（browser_* 工具）控制的是同一个浏览器，按场景选择：
+### MCP vs SDK — 该用哪个？
 
 | 场景 | 推荐方式 | 原因 |
 |------|---------|------|
 | "帮我看看这个网页" | **MCP** | `browser_scan` 自动降噪，返回干净内容，零启动开销 |
-| "抓取这个列表的数据" | **Skill** | `query_all` 精准提取，只拿你要的，省 token |
-| "滚动加载更多内容" | **Skill** | 一个脚本循环跑完，不需要多轮对话 |
+| "抓取这个列表的数据" | **SDK** | `query_all` 精准提取，只拿你要的，省 token |
+| "滚动加载更多内容" | **SDK** | 一个脚本循环跑完，不需要多轮对话 |
 | "帮我截个图" | **MCP** | 只有 MCP 有 `browser_screenshot` |
 | "读取 Cookie" | **MCP** | 只有 MCP 有 `browser_cookies` |
-| "多步操作（登录→点击→提交）" | **Skill** | 一次脚本搞定整个流程 |
+| "多步操作（登录→点击→提交）" | **SDK** | 一次脚本搞定整个流程 |
 | "看看有哪些标签页" | **MCP** | `browser_get_tabs` / `browser_switch_tab` |
 
-**速度**：简单操作 MCP 更快（无需 uvx 启动）；复杂多步操作 Skill 更快（一次脚本 vs MCP 多轮对话）。
-
-**Token 效率**：`browser_scan` 自动过滤 script/style/隐藏元素（约为原文的 1/3 ~ 1/5）；Skill 的 `query_all()` 只提取目标数据；两者都比 `extract_text('body')` 全量返回更省 token。
-
-**最佳实践**：两个都装。查看页面用 MCP，复杂爬取用 Skill。
+**最佳实践**：两个都装。查看页面用 MCP，复杂爬取用 SDK。
 
 ## 常见问题
 

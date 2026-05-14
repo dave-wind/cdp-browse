@@ -10,6 +10,7 @@ TMP=$(mktemp -d)
 
 echo "Downloading CDP Browse Bridge extension..."
 git clone --depth 1 "$REPO" "$TMP/repo"
+mkdir -p "$DEST"
 cp -r "$TMP/repo/"* "$DEST/"
 rm -rf "$TMP"
 
