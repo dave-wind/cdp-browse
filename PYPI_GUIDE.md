@@ -1,6 +1,6 @@
 # PyPI 发布指南
 
-本文档记录 `cdp-browse` 包的 PyPI 发布全流程，包括首次配置和后续更新。
+本文档记录 `cdp-browse` 包的 PyPI 发布全流程，使用 `uv` 管理。
 
 ## 首次配置（只需一次）
 
@@ -10,8 +10,6 @@
 2. 填写用户名、邮箱、密码
 3. 验证邮箱
 4. **必须开启 2FA**：Settings → Account settings → Two factor authentication
-   - 推荐使用 Authenticator App（Google Authenticator / 1Password / Authy）
-   - 扫码绑定后，每次登录需要输入动态码
 
 ### 2. 生成 API Token
 
@@ -21,31 +19,17 @@
 4. 点击 **Generate token**
 5. **立即复制保存**，token 只显示一次
 
-### 3. 配置本地认证
+### 3. 配置 Token
 
-创建 `~/.pypirc` 文件：
-
-```ini
-[distutils]
-index-servers =
-    pypi
-
-[pypi]
-username = __token__
-password = pypi-你的token内容
-```
-
-设置文件权限（仅自己可读）：
+在 `~/.zshrc` 或 `~/.bashrc` 中添加：
 
 ```bash
-chmod 600 ~/.pypirc
+export UV_PUBLISH_TOKEN=pypi-你的token内容
 ```
 
-### 4. 安装构建工具
+然后 `source ~/.zshrc`（或重启终端）。
 
-```bash
-pip install build twine
-```
+> **安全提示：** Token 通过环境变量传递，不会出现在代码或 git 中。AI 助手无法读取 token 值。
 
 ## 发布新版本
 
@@ -62,74 +46,44 @@ version = "0.3.0"  # 从 0.2.0 改为新版本
 - **小版本** `0.2.0 → 0.3.0`：新增功能，向后兼容
 - **大版本** `0.2.0 → 1.0.0`：破坏性变更
 
-### 2. 清理旧构建产物
+### 2. 发布
 
 ```bash
-rm -rf dist build cdp_sdk.egg-info
+./publish.sh
 ```
 
-### 3. 构建
+脚本会自动：清理 `dist/` → `uv build` 构建 → `uv publish` 发布。
+
+也可以临时传入 token：
 
 ```bash
-python -m build
+./publish.sh --token pypi-xxx
 ```
-
-成功后 `dist/` 目录会出现：
-- `cdp_browse-{version}-py3-none-any.whl`（wheel 包）
-- `cdp_browse-{version}.tar.gz`（源码包）
-
-### 4. 检查包内容（可选）
-
-```bash
-# 检查包是否正确
-twine check dist/*
-
-# 查看包里包含哪些文件
-unzip -l dist/cdp_browse-*.whl
-```
-
-### 5. 发布
-
-```bash
-twine upload dist/*
-```
-
-发布成功后会显示：`https://pypi.org/project/cdp-browse/{version}/`
 
 > PyPI 不允许重复上传同一版本号。如果上传失败需要改版本号重新构建。
 
-### 6. 更新本地安装
+### 3. 验证
 
+发布成功后访问：`https://pypi.org/project/cdp-browse/{version}/`
+
+本地验证：
 ```bash
-pip install --upgrade cdp-browse
+uvx --from cdp-browse cdp-browse --help
 ```
 
-## 测试发布（推荐）
-
-正式发布前可以先发到 TestPyPI 验证：
-
-### 配置 TestPyPI
-
-在 `~/.pypirc` 中追加：
-
-```ini
-[testpypi]
-username = __token__
-password = pypi-你的testpypi-token
-```
-
-TestPyPI 是独立环境，需要单独注册：https://test.pypi.org/account/register/
-
-### 发布到 TestPyPI
+## 完整更新流程速查
 
 ```bash
-twine upload --repository testpypi dist/*
-```
+# 1. 改版本号
+vim pyproject.toml  # version = "x.y.z"
 
-### 从 TestPyPI 安装测试
+# 2. 发布
+./publish.sh
 
-```bash
-pip install --index-url https://test.pypi.org/simple/ cdp-browse
+# 3. 提交
+git add -A
+git commit -m "release: vx.y.z"
+git push
 ```
 
 ## 常见问题
@@ -138,29 +92,5 @@ pip install --index-url https://test.pypi.org/simple/ cdp-browse
 |------|------|------|
 | `403 Forbidden` | 包名被占用或 token 无效 | 换包名，或重新生成 token |
 | `400 File already exists` | 同一版本号已发布 | 改版本号重新构建 |
-| `Invalid API token` | token 配置错误 | 检查 `~/.pypirc`，确认 username 是 `__token__` |
+| `UV_PUBLISH_TOKEN not set` | 未配置环境变量 | 在 `~/.zshrc` 中添加 export |
 | `ModuleNotFoundError` | 包结构不对 | 检查 `pyproject.toml` 的 `[tool.setuptools.packages.find]` |
-| `Multiple top-level packages` | setuptools 发现多余目录 | 在 `include` 中只保留 `["cdp_sdk*"]` |
-
-## 完整更新流程速查
-
-```bash
-# 1. 改版本号
-vim pyproject.toml  # version = "x.y.z"
-
-# 2. 清理 + 构建
-rm -rf dist build cdp_sdk.egg-info
-python -m build
-
-# 3. 发布
-twine upload dist/*
-
-# 4. 更新本地
-pip install --upgrade cdp-browse
-
-# 5. 清理 + 提交
-rm -rf dist build cdp_sdk.egg-info
-git add -A
-git commit -m "release: vx.y.z"
-git push
-```
