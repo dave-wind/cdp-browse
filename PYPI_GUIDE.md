@@ -19,7 +19,13 @@
 4. 点击 **Generate token**
 5. **立即复制保存**，token 只显示一次
 
-### 3. 配置 Token
+### 3. 授权发布脚本
+
+```bash
+chmod +x publish.sh
+```
+
+### 4. 配置 Token
 
 在 `~/.zshrc` 或 `~/.bashrc` 中添加：
 
